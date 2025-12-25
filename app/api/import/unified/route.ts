@@ -93,7 +93,8 @@ export async function POST(request: NextRequest) {
     // Step 1: Create Company
     let company, companyError;
     try {
-      const result = await supabase
+      // Cast supabase client to bypass strict typing for inserts
+      const result = await (supabase as any)
         .from('companies')
         .insert([{
           name: parsedData.company.name,
