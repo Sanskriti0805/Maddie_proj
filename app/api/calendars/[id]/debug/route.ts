@@ -31,6 +31,17 @@ export async function GET(
       .select('*')
       .eq('calendar_id', params.id);
 
+    // Type assertion for posts
+    type PostType = {
+      id: string;
+      calendar_id: string;
+      day_of_week: number;
+      topic?: string;
+      created_at: string;
+      [key: string]: any;
+    };
+    const postsData = (posts || []) as PostType[];
+
     // Get ALL posts in database (to see if they're being created elsewhere)
     const { data: allPosts } = await supabase
       .from('calendar_posts')
@@ -54,6 +65,15 @@ export async function GET(
       .order('week_start_date', { ascending: false })
       .limit(10);
 
+    // Type assertion for companyCalendars
+    type CalendarType = {
+      id: string;
+      week_start_date: string;
+      posts_per_week: number;
+      [key: string]: any;
+    };
+    const companyCalendarsData = (companyCalendars || []) as CalendarType[];
+
     return NextResponse.json({
       calendar_id: params.id,
       calendar: {
@@ -61,21 +81,21 @@ export async function GET(
         week_start_date: calendarData.week_start_date,
         company_id: calendarData.company_id,
       },
-      posts_for_this_calendar: posts?.length || 0,
-      posts: posts?.map(p => ({
+      posts_for_this_calendar: postsData.length,
+      posts: postsData.map(p => ({
         id: p.id,
         calendar_id: p.calendar_id,
         day_of_week: p.day_of_week,
         topic: p.topic?.substring(0, 50),
         created_at: p.created_at,
-      })) || [],
+      })),
       all_posts_in_db: allPosts?.length || 0,
       posts_by_calendar_id: postsByCalendar,
-      recent_calendars: companyCalendars?.map(c => ({
+      recent_calendars: companyCalendarsData.map(c => ({
         id: c.id,
         week_start_date: c.week_start_date,
         posts_per_week: c.posts_per_week,
-      })) || [],
+      })),
       error: postsError?.message,
     });
   } catch (error: any) {
