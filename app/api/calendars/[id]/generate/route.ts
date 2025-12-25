@@ -33,6 +33,8 @@ export async function POST(
       company_id: string;
       week_start_date: string;
       posts_per_week: number;
+      status: 'draft' | 'approved' | 'published';
+      created_at: string;
       [key: string]: any;
     };
     const calendarData = calendar as CalendarType;
