@@ -37,9 +37,11 @@ export async function GET(
 
     // Group by calendar_id
     const postsByCalendar: Record<string, number> = {};
-    allPosts?.forEach(p => {
-      postsByCalendar[p.calendar_id] = (postsByCalendar[p.calendar_id] || 0) + 1;
-    });
+    if (allPosts) {
+      allPosts.forEach((p: { calendar_id: string }) => {
+        postsByCalendar[p.calendar_id] = (postsByCalendar[p.calendar_id] || 0) + 1;
+      });
+    }
 
     // Get all calendars for this company
     const { data: companyCalendars } = await supabase

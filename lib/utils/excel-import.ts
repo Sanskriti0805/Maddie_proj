@@ -1,4 +1,4 @@
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 import type { Company, Persona, Subreddit } from '@/types';
 
 interface ExcelCompanyData {
