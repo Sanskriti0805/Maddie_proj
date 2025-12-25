@@ -29,7 +29,10 @@ export async function POST(request: NextRequest) {
       .select('*')
       .eq('calendar_id', calendar.id);
 
-    const postIds = posts?.map(p => p.id) || [];
+    // Type assertion for posts
+    type PostType = { id: string; [key: string]: any };
+    const postsData = (posts || []) as PostType[];
+    const postIds = postsData.map(p => p.id);
     let replies: any[] = [];
     if (postIds.length > 0) {
       const { data: repliesData } = await supabase
