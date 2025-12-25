@@ -175,8 +175,8 @@ export async function POST(request: NextRequest) {
       let personaId = usernameToPersona.get(username);
       
       // If persona not found, use first persona as fallback
-      if (!personaId && personas.length > 0) {
-        personaId = personas[0].id;
+      if (!personaId && personasData.length > 0) {
+        personaId = personasData[0].id;
         console.warn(`Persona not found for username "${excelPost.author_username}". Using first persona.`);
       }
 
