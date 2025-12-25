@@ -126,7 +126,6 @@ export async function POST(request: NextRequest) {
       calendarId = existingCalendarData.id;
     } else {
       // Create calendar
-      // Cast supabase client to bypass strict typing for inserts
       const { data: calendar, error: calendarError } = await (supabase as any)
         .from('content_calendars')
         .insert({
@@ -189,7 +188,8 @@ export async function POST(request: NextRequest) {
       const postType = inferPostType(excelPost.title, excelPost.body);
 
       // Create post
-      const { data: post, error: postError } = await supabase
+      // Cast supabase client to bypass strict typing for inserts
+      const { data: post, error: postError } = await (supabase as any)
         .from('calendar_posts')
         .insert({
           calendar_id: calendarId,
