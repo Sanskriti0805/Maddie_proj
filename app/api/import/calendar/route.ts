@@ -120,10 +120,14 @@ export async function POST(request: NextRequest) {
 
     let calendarId: string;
     if (existingCalendar) {
-      calendarId = existingCalendar.id;
+      // Type assertion for existingCalendar
+      type ExistingCalendarType = { id: string; [key: string]: any };
+      const existingCalendarData = existingCalendar as ExistingCalendarType;
+      calendarId = existingCalendarData.id;
     } else {
       // Create calendar
-      const { data: calendar, error: calendarError } = await supabase
+      // Cast supabase client to bypass strict typing for inserts
+      const { data: calendar, error: calendarError } = await (supabase as any)
         .from('content_calendars')
         .insert({
           company_id: companyId,
@@ -140,7 +144,10 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
-      calendarId = calendar.id;
+      // Type assertion for calendar
+      type CalendarType = { id: string; [key: string]: any };
+      const calendarData = calendar as CalendarType;
+      calendarId = calendarData.id;
     }
 
     // Create posts
