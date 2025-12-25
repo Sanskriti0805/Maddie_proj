@@ -22,6 +22,9 @@ export async function GET(
       return NextResponse.json({ error: 'Calendar not found' }, { status: 404 });
     }
 
+    // Type assertion for calendar
+    const calendarData = calendar as { id: string; company_id: string; week_start_date: string; [key: string]: any };
+
     // Get ALL posts for this calendar
     const { data: posts, error: postsError } = await supabase
       .from('calendar_posts')
@@ -47,16 +50,16 @@ export async function GET(
     const { data: companyCalendars } = await supabase
       .from('content_calendars')
       .select('id, week_start_date, posts_per_week')
-      .eq('company_id', calendar.company_id)
+      .eq('company_id', calendarData.company_id)
       .order('week_start_date', { ascending: false })
       .limit(10);
 
     return NextResponse.json({
       calendar_id: params.id,
       calendar: {
-        id: calendar.id,
-        week_start_date: calendar.week_start_date,
-        company_id: calendar.company_id,
+        id: calendarData.id,
+        week_start_date: calendarData.week_start_date,
+        company_id: calendarData.company_id,
       },
       posts_for_this_calendar: posts?.length || 0,
       posts: posts?.map(p => ({
