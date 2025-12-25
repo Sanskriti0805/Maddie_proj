@@ -44,10 +44,11 @@ export async function POST(request: NextRequest) {
       type CalendarType = {
         company_id: string;
         posts_per_week: number;
+        week_start_date: string;
         [key: string]: any;
       };
       const calendarData = calendar as CalendarType;
-      currentCalendar = calendar;
+      currentCalendar = calendarData;
       companyId = calendarData.company_id;
       postsPerWeek = calendarData.posts_per_week;
     } else {
@@ -78,8 +79,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate next week start date
-    const currentWeekStart = currentCalendar?.week_start_date 
-      ? new Date(currentCalendar.week_start_date)
+    // Type assertion for currentCalendar
+    type CurrentCalendarType = {
+      week_start_date?: string;
+      [key: string]: any;
+    };
+    const currentCalendarData = currentCalendar as CurrentCalendarType | null;
+    const currentWeekStart = currentCalendarData?.week_start_date 
+      ? new Date(currentCalendarData.week_start_date)
       : new Date();
     
     const nextWeekStart = addWeeks(startOfWeek(currentWeekStart, { weekStartsOn: 0 }), 1);
@@ -94,10 +101,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (existingCalendar) {
+      // Type assertion for existingCalendar
+      type ExistingCalendarType = { id: string };
+      const existingCalendarData = existingCalendar as ExistingCalendarType;
       return NextResponse.json(
         { 
           error: 'Next week\'s calendar already exists',
-          calendar_id: existingCalendar.id,
+          calendar_id: existingCalendarData.id,
         },
         { status: 409 }
       );
@@ -116,7 +126,10 @@ export async function POST(request: NextRequest) {
       .select('*')
       .eq('calendar_id', calendar.id);
 
-    const postIds = posts?.map(p => p.id) || [];
+    // Type assertion for posts
+    type PostType = { id: string; [key: string]: any };
+    const postsData = (posts || []) as PostType[];
+    const postIds = postsData.map(p => p.id);
     let replies: any[] = [];
     if (postIds.length > 0) {
       const { data: repliesData } = await supabase
@@ -146,7 +159,10 @@ export async function POST(request: NextRequest) {
       .order('week_start_date', { ascending: false })
       .limit(4);
 
-    const previousCalendarIds = previousCalendars?.map(c => c.id) || [];
+    // Type assertion for previousCalendars
+    type PreviousCalendarType = { id: string };
+    const previousCalendarsData = (previousCalendars || []) as PreviousCalendarType[];
+    const previousCalendarIds = previousCalendarsData.map(c => c.id);
     let previousWeeksPosts: any[] = [];
     if (previousCalendarIds.length > 0) {
       const { data: prevPosts } = await supabase
@@ -167,12 +183,13 @@ export async function POST(request: NextRequest) {
     });
 
     // Update calendar with quality scores
-    await supabase
+    // Cast supabase client to bypass strict typing for custom columns
+    await (supabase as any)
       .from('content_calendars')
       .update({
         quality_score: quality,
         quality_feedback: quality.issues,
-      } as any)
+      })
       .eq('id', calendar.id);
 
     return NextResponse.json({
