@@ -57,7 +57,21 @@ export async function POST(request: NextRequest) {
       .select('*')
       .eq('company_id', companyId);
 
-    if (!personas || personas.length === 0) {
+    // Type assertions
+    type PersonaType = {
+      id: string;
+      reddit_account?: string;
+      [key: string]: any;
+    };
+    type SubredditType = {
+      id: string;
+      name: string;
+      [key: string]: any;
+    };
+    const personasData = (personas || []) as PersonaType[];
+    const subredditsData = (subreddits || []) as SubredditType[];
+
+    if (personasData.length === 0) {
       return NextResponse.json(
         { error: 'No personas found for this company. Please add personas first.' },
         { status: 400 }
@@ -66,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     // Create username to persona mapping
     const usernameToPersona = new Map<string, string>();
-    personas.forEach(p => {
+    personasData.forEach(p => {
       if (p.reddit_account) {
         usernameToPersona.set(p.reddit_account.toLowerCase(), p.id);
       }
@@ -74,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     // Create subreddit name to ID mapping
     const subredditNameToId = new Map<string, string>();
-    subreddits?.forEach(s => {
+    subredditsData.forEach(s => {
       const name = s.name.toLowerCase().replace('r/', '');
       subredditNameToId.set(name, s.id);
       subredditNameToId.set(s.name.toLowerCase(), s.id);
