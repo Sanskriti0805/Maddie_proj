@@ -229,8 +229,8 @@ export async function POST(request: NextRequest) {
       const username = excelComment.username.toLowerCase();
       let personaId = usernameToPersona.get(username);
       
-      if (!personaId && personas.length > 0) {
-        personaId = personas[0].id;
+      if (!personaId && personasData.length > 0) {
+        personaId = personasData[0].id;
         console.warn(`Persona not found for username "${excelComment.username}". Using first persona.`);
       }
 
