@@ -263,7 +263,8 @@ export async function POST(request: NextRequest) {
       }
 
       // Create reply
-      const { data: reply, error: replyError } = await supabase
+      // Cast supabase client to bypass strict typing for inserts
+      const { data: reply, error: replyError } = await (supabase as any)
         .from('calendar_replies')
         .insert({
           post_id: postId,
