@@ -27,16 +27,30 @@ export async function POST(
       );
     }
 
+    // Type assertion for calendar
+    type CalendarType = {
+      id: string;
+      company_id: string;
+      week_start_date: string;
+      posts_per_week: number;
+      [key: string]: any;
+    };
+    const calendarData = calendar as CalendarType;
+
     // Check if posts already exist - if they do, delete them first to allow regeneration
     const { data: existingPosts } = await supabase
       .from('calendar_posts')
       .select('id')
       .eq('calendar_id', params.id);
 
-    if (existingPosts && existingPosts.length > 0) {
-      console.log(`Found ${existingPosts.length} existing posts, deleting them...`);
+    // Type assertion for existingPosts
+    type PostIdType = { id: string };
+    const existingPostsData = (existingPosts || []) as PostIdType[];
+
+    if (existingPostsData.length > 0) {
+      console.log(`Found ${existingPostsData.length} existing posts, deleting them...`);
       // Delete existing posts and replies to allow regeneration
-      const existingPostIds = existingPosts.map(p => p.id);
+      const existingPostIds = existingPostsData.map(p => p.id);
       
       // Delete replies first (foreign key constraint)
       const { error: deleteRepliesError } = await supabase
@@ -57,7 +71,7 @@ export async function POST(
       if (deletePostsError) {
         console.error('Error deleting posts:', deletePostsError);
       } else {
-        console.log(`Successfully deleted ${existingPosts.length} existing posts`);
+        console.log(`Successfully deleted ${existingPostsData.length} existing posts`);
       }
       
       // Verify deletion
@@ -70,11 +84,11 @@ export async function POST(
 
     // Generate posts for existing calendar (pass existing_calendar_id to avoid creating duplicate)
     try {
-      console.log(`Generating posts for calendar ${params.id}, company ${calendar.company_id}`);
+      console.log(`Generating posts for calendar ${params.id}, company ${calendarData.company_id}`);
       await generateCalendar({
-        company_id: calendar.company_id,
-        week_start_date: new Date(calendar.week_start_date),
-        posts_per_week: calendar.posts_per_week,
+        company_id: calendarData.company_id,
+        week_start_date: new Date(calendarData.week_start_date),
+        posts_per_week: calendarData.posts_per_week,
         existing_calendar_id: params.id, // Use existing calendar
       });
       console.log('Calendar generation completed');
@@ -140,16 +154,16 @@ export async function POST(
     const { data: subreddits } = await supabase
       .from('subreddits')
       .select('*')
-      .eq('company_id', calendar.company_id);
+      .eq('company_id', calendarData.company_id);
 
     const { data: personas } = await supabase
       .from('personas')
       .select('*')
-      .eq('company_id', calendar.company_id);
+      .eq('company_id', calendarData.company_id);
 
     // Evaluate quality
     const quality = evaluateCalendarQuality({
-      calendar,
+      calendar: calendarData,
       posts: posts || [],
       replies,
       subreddits: subreddits || [],
@@ -173,9 +187,11 @@ export async function POST(
       .from('calendar_posts')
       .select('id, calendar_id, topic, day_of_week')
       .eq('calendar_id', params.id);
-    console.log(`Debug: Posts with calendar_id ${params.id}:`, allPostsDebug?.length || 0);
-    if (allPostsDebug && allPostsDebug.length > 0) {
-      console.log('Debug: Post details:', allPostsDebug.map(p => ({
+    type PostDebugType = { id: string; calendar_id: string; topic?: string; day_of_week: number };
+    const allPostsDebugData = (allPostsDebug || []) as PostDebugType[];
+    console.log(`Debug: Posts with calendar_id ${params.id}:`, allPostsDebugData.length);
+    if (allPostsDebugData.length > 0) {
+      console.log('Debug: Post details:', allPostsDebugData.map(p => ({
         id: p.id,
         calendar_id: p.calendar_id,
         day: p.day_of_week,
@@ -188,9 +204,11 @@ export async function POST(
       .from('calendar_posts')
       .select('id, calendar_id, topic')
       .limit(20);
-    console.log(`Debug: Total posts in database (first 20):`, allPostsEverywhere?.length || 0);
-    if (allPostsEverywhere && allPostsEverywhere.length > 0) {
-      const postsByCalendar = allPostsEverywhere.reduce((acc: any, p: any) => {
+    type PostEverywhereType = { id: string; calendar_id: string; topic?: string };
+    const allPostsEverywhereData = (allPostsEverywhere || []) as PostEverywhereType[];
+    console.log(`Debug: Total posts in database (first 20):`, allPostsEverywhereData.length);
+    if (allPostsEverywhereData.length > 0) {
+      const postsByCalendar = allPostsEverywhereData.reduce((acc: any, p: PostEverywhereType) => {
         acc[p.calendar_id] = (acc[p.calendar_id] || 0) + 1;
         return acc;
       }, {});
@@ -202,18 +220,18 @@ export async function POST(
       const { data: companyData } = await supabase
         .from('companies')
         .select('id')
-        .eq('id', calendar.company_id)
+        .eq('id', calendarData.company_id)
         .single();
 
       const { data: personasData } = await supabase
         .from('personas')
         .select('id')
-        .eq('company_id', calendar.company_id);
+        .eq('company_id', calendarData.company_id);
 
       const { data: subredditsData } = await supabase
         .from('subreddits')
         .select('id')
-        .eq('company_id', calendar.company_id);
+        .eq('company_id', calendarData.company_id);
 
       return NextResponse.json({
         success: false,
@@ -233,7 +251,9 @@ export async function POST(
       .from('calendar_posts')
       .select('id')
       .eq('calendar_id', params.id);
-    const finalCount = finalCheck?.length || 0;
+    type FinalCheckType = { id: string };
+    const finalCheckData = (finalCheck || []) as FinalCheckType[];
+    const finalCount = finalCheckData.length;
     
     console.log(`Final check: ${finalCount} posts exist for calendar ${params.id}`);
     
