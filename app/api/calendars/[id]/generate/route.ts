@@ -173,15 +173,18 @@ export async function POST(
     });
 
     // Update calendar with quality scores
-    const updateData: any = {
-      quality_score: quality,
-      quality_feedback: quality.issues,
-    };
-    
-    await supabase
+    // @ts-expect-error - quality_score and quality_feedback are custom columns not in Supabase types
+    const { error: updateError } = await supabase
       .from('content_calendars')
-      .update(updateData)
+      .update({
+        quality_score: quality,
+        quality_feedback: quality.issues,
+      })
       .eq('id', params.id);
+    
+    if (updateError) {
+      console.error('Error updating calendar quality:', updateError);
+    }
 
     const postCount = posts?.length || 0;
     const replyCount = replies.length;
