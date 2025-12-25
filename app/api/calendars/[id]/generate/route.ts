@@ -173,14 +173,13 @@ export async function POST(
     });
 
     // Update calendar with quality scores
-    const updateData: Record<string, any> = {
-      quality_score: quality,
-      quality_feedback: quality.issues,
-    };
-    await supabase
+    await (supabase
       .from('content_calendars')
-      .update(updateData)
-      .eq('id', params.id);
+      .update({
+        quality_score: quality,
+        quality_feedback: quality.issues,
+      } as any)
+      .eq('id', params.id) as any);
 
     const postCount = posts?.length || 0;
     const replyCount = replies.length;
