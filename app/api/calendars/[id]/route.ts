@@ -34,20 +34,32 @@ export async function GET(
       return NextResponse.json({ error: postsError.message }, { status: 500 });
     }
     
-    console.log(`Calendar ${params.id}: Found ${posts?.length || 0} posts (raw query)`);
+    // Type assertion for posts
+    type PostType = {
+      id: string;
+      calendar_id: string;
+      day_of_week: number;
+      order_in_day: number;
+      subreddit_id: string;
+      persona_id: string;
+      [key: string]: any;
+    };
+    const postsData = (posts || []) as PostType[];
+    
+    console.log(`Calendar ${params.id}: Found ${postsData.length} posts (raw query)`);
     
     // Sort in memory if needed
-    const sortedPosts = posts?.sort((a, b) => {
+    const sortedPosts = postsData.sort((a, b) => {
       if (a.day_of_week !== b.day_of_week) {
         return a.day_of_week - b.day_of_week;
       }
       return (a.order_in_day || 0) - (b.order_in_day || 0);
     });
     
-    console.log(`After sorting: ${sortedPosts?.length || 0} posts`);
+    console.log(`After sorting: ${sortedPosts.length} posts`);
 
     // Use sorted posts
-    const postsToUse = sortedPosts || posts || [];
+    const postsToUse = sortedPosts;
     
     // Get replies
     const postIds = postsToUse.map(p => p.id);

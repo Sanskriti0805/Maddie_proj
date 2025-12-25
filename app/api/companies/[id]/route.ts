@@ -35,7 +35,8 @@ export async function PUT(
     const body = await request.json();
     const supabase = createServerClient();
 
-    const { data, error } = await supabase
+    // Cast supabase client to bypass strict typing for updates
+    const { data, error } = await (supabase as any)
       .from('companies')
       .update(body)
       .eq('id', params.id)

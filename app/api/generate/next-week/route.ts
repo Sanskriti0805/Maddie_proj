@@ -40,9 +40,16 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Type assertion for calendar
+      type CalendarType = {
+        company_id: string;
+        posts_per_week: number;
+        [key: string]: any;
+      };
+      const calendarData = calendar as CalendarType;
       currentCalendar = calendar;
-      companyId = calendar.company_id;
-      postsPerWeek = calendar.posts_per_week;
+      companyId = calendarData.company_id;
+      postsPerWeek = calendarData.posts_per_week;
     } else {
       // Use company_id directly
       companyId = company_id;
@@ -56,7 +63,18 @@ export async function POST(request: NextRequest) {
         .limit(1)
         .single();
 
-      postsPerWeek = recentCalendar?.posts_per_week || 5;
+      // Type assertion for recentCalendar
+      if (recentCalendar) {
+        type RecentCalendarType = {
+          posts_per_week: number;
+          week_start_date: string;
+          [key: string]: any;
+        };
+        const recentCalendarData = recentCalendar as RecentCalendarType;
+        postsPerWeek = recentCalendarData.posts_per_week;
+      } else {
+        postsPerWeek = 5;
+      }
     }
 
     // Calculate next week start date
