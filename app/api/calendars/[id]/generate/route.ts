@@ -173,13 +173,13 @@ export async function POST(
     });
 
     // Update calendar with quality scores
-    // @ts-ignore - quality_score and quality_feedback are custom columns not in Supabase types
-    const { error: updateError } = await supabase
+    // Cast entire supabase client to bypass strict typing for custom columns
+    const { error: updateError } = await (supabase as any)
       .from('content_calendars')
       .update({
         quality_score: quality,
         quality_feedback: quality.issues,
-      } as any)
+      })
       .eq('id', params.id);
     
     if (updateError) {
