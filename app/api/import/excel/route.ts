@@ -32,7 +32,8 @@ export async function POST(request: NextRequest) {
     const supabase = createServerClient();
 
     // Create company
-    const { data: company, error: companyError } = await supabase
+    // Cast supabase client to bypass strict typing for inserts
+    const { data: company, error: companyError } = await (supabase as any)
       .from('companies')
       .insert({
         name: parsedData.company.name,
@@ -69,7 +70,8 @@ export async function POST(request: NextRequest) {
         reddit_account: p.reddit_account || null,
       }));
 
-      const { data: personas, error: personasError } = await supabase
+      // Cast supabase client to bypass strict typing for inserts
+      const { data: personas, error: personasError } = await (supabase as any)
         .from('personas')
         .insert(personasToInsert)
         .select();
@@ -90,7 +92,8 @@ export async function POST(request: NextRequest) {
         size_category: s.size_category || 'medium',
       }));
 
-      const { data: subreddits, error: subredditsError } = await supabase
+      // Cast supabase client to bypass strict typing for inserts
+      const { data: subreddits, error: subredditsError } = await (supabase as any)
         .from('subreddits')
         .insert(subredditsToInsert)
         .select();
