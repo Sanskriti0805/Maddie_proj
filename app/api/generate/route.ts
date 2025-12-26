@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateCalendar } from '@/lib/planning';
-import { evaluateCalendarQuality } from '@/lib/planning/quality';
-import { createServerClient } from '@/lib/supabase/client';
+
+// Mark route as dynamic to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
+  // Lazy import to avoid module-level execution during build
+  const { generateCalendar } = await import('@/lib/planning');
+  const { evaluateCalendarQuality } = await import('@/lib/planning/quality');
+  const { createServerClient } = await import('@/lib/supabase/client');
   try {
     const body = await request.json();
     const { company_id, week_start_date, posts_per_week } = body;

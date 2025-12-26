@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/client';
-import { generateCalendar } from '@/lib/planning';
-import { evaluateCalendarQuality } from '@/lib/planning/quality';
+
+// Mark route as dynamic to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * Generate posts for an existing calendar
@@ -11,6 +12,11 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Lazy import to avoid module-level execution during build
+    const { createServerClient } = await import('@/lib/supabase/client');
+    const { generateCalendar } = await import('@/lib/planning');
+    const { evaluateCalendarQuality } = await import('@/lib/planning/quality');
+    
     const supabase = createServerClient();
 
     // Get existing calendar

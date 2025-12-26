@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateCalendar } from '@/lib/planning';
-import { evaluateCalendarQuality } from '@/lib/planning/quality';
-import { createServerClient } from '@/lib/supabase/client';
 import { addWeeks, startOfWeek } from 'date-fns';
+
+// Mark route as dynamic to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * Generate next week's calendar based on current week
  */
 export async function POST(request: NextRequest) {
+  // Lazy import to avoid module-level execution during build
+  const { generateCalendar } = await import('@/lib/planning');
+  const { evaluateCalendarQuality } = await import('@/lib/planning/quality');
+  const { createServerClient } = await import('@/lib/supabase/client');
   try {
     const body = await request.json();
     const { current_calendar_id, company_id } = body;
