@@ -105,20 +105,20 @@ Format as JSON array:
         relevance_score: calculateRelevanceScore(t.topic || '', company),
         post_type: (t.post_type || 'question') as 'question' | 'story' | 'advice',
       }))
-      .filter(t => {
+      .filter((t: any) => {
         // Filter out salesy language
         const salesyKeywords = ['buy', 'purchase', 'sign up', 'try now', 'get started', 'free trial'];
         const lowerTopic = t.topic.toLowerCase();
         return !salesyKeywords.some(keyword => lowerTopic.includes(keyword));
       })
-      .filter(t => {
+      .filter((t: any) => {
         // Check against recent topics (fuzzy match)
         return !recentTopics.some(recent => {
           const similarity = calculateSimilarity(t.topic, recent);
           return similarity > 0.7; // 70% similarity threshold
         });
       })
-      .sort((a, b) => b.relevance_score - a.relevance_score)
+      .sort((a: any, b: any) => b.relevance_score - a.relevance_score)
       .slice(0, count);
 
     return generated;

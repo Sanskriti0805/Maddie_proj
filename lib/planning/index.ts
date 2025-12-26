@@ -11,6 +11,7 @@ import type {
   SubredditActivity,
   PlanningParams,
   GeneratedTopic,
+  SubredditScore,
 } from '@/types';
 import { generateTopics } from './topics';
 import { selectSubreddit, updateSubredditActivity } from './subreddits';
@@ -30,33 +31,51 @@ export async function generateCalendar(params: PlanningParams): Promise<ContentC
   const supabase = createServerClient();
 
   // 1. Load all required data
-  const { data: company } = await supabase
+  const { data: companyData } = await supabase
     .from('companies')
     .select('*')
     .eq('id', company_id)
     .single();
-
-  if (!company) {
+  
+  // Type assertion for company
+  type CompanyType = {
+    id: string;
+    name: string;
+    target_users: string[];
+    pain_points: string[];
+    tone_positioning?: string;
+    description?: string;
+    [key: string]: any;
+  };
+  if (!companyData) {
     throw new Error('Company not found');
   }
+  
+  const company = companyData as CompanyType;
 
-  const { data: personas } = await supabase
+  const { data: personasData } = await supabase
     .from('personas')
     .select('*')
     .eq('company_id', company_id);
 
-  if (!personas || personas.length === 0) {
+  if (!personasData || personasData.length === 0) {
     throw new Error('No personas found for company');
   }
+  
+  // Type assertion for personas
+  const personas = personasData as Persona[];
 
-  const { data: subreddits } = await supabase
+  const { data: subredditsData } = await supabase
     .from('subreddits')
     .select('*')
     .eq('company_id', company_id);
 
-  if (!subreddits || subreddits.length === 0) {
+  if (!subredditsData || subredditsData.length === 0) {
     throw new Error('No subreddits found for company');
   }
+  
+  // Type assertion for subreddits
+  const subreddits = subredditsData as Subreddit[];
 
   const { data: seoQueries } = await supabase
     .from('seo_queries')
@@ -130,7 +149,8 @@ export async function generateCalendar(params: PlanningParams): Promise<ContentC
     }
     calendar = existingCalendar as ContentCalendar;
   } else {
-    const { data: newCalendar, error: calendarError } = await supabase
+    // Cast supabase client to bypass strict typing for inserts
+    const { data: newCalendar, error: calendarError } = await (supabase as any)
       .from('content_calendars')
       .insert({
         company_id,
@@ -157,8 +177,14 @@ export async function generateCalendar(params: PlanningParams): Promise<ContentC
   const strategyMap = assignWeeklyStrategy(posts_per_week, dayPosts);
 
   let topicIndex = 0;
+  // Type assertion for activities
+  type ActivityType = {
+    subreddit_id: string;
+    [key: string]: any;
+  };
+  const activitiesData = (activities || []) as ActivityType[];
   const activitiesMap = new Map<string, SubredditActivity>();
-  (activities || []).forEach(a => {
+  activitiesData.forEach(a => {
     activitiesMap.set(a.subreddit_id, a as SubredditActivity);
   });
   
@@ -171,7 +197,10 @@ export async function generateCalendar(params: PlanningParams): Promise<ContentC
     .order('week_start_date', { ascending: false })
     .limit(4); // Last 4 weeks
     
-  const previousCalendarIds = previousCalendars?.map(c => c.id) || [];
+  // Type assertion for previousCalendars
+  type PreviousCalendarType = { id: string; [key: string]: any };
+  const previousCalendarsData = (previousCalendars || []) as PreviousCalendarType[];
+  const previousCalendarIds = previousCalendarsData.map(c => c.id);
   let previousWeeksPosts: CalendarPost[] = [];
   if (previousCalendarIds.length > 0) {
     const { data: prevPosts } = await supabase
@@ -285,7 +314,7 @@ export async function generateCalendar(params: PlanningParams): Promise<ContentC
       // Assign persona with aggressive fallback
       let persona: Persona | null = null;
       const personaAssignment = assignPersona({
-        personas: personas as Persona[],
+        personas: personas,
         topic,
         recentPosts: (recentPosts || []) as CalendarPost[],
         targetDate,
@@ -325,7 +354,8 @@ export async function generateCalendar(params: PlanningParams): Promise<ContentC
 
       console.log(`Creating post for day ${dayOfWeek}, calendar_id: ${calendar.id}, topic: ${topic.topic.substring(0, 50)}`);
 
-      const { data: post, error: postError } = await supabase
+      // Cast supabase client to bypass strict typing for inserts
+      const { data: post, error: postError } = await (supabase as any)
         .from('calendar_posts')
         .insert(postData)
         .select()
@@ -335,7 +365,8 @@ export async function generateCalendar(params: PlanningParams): Promise<ContentC
         // If error is about posting_strategy column, try without it
         if (postError?.message?.includes('posting_strategy') || postError?.code === '42703') {
           console.warn('posting_strategy column not found, retrying without it');
-          const { data: retryPost, error: retryError } = await supabase
+          // Cast supabase client to bypass strict typing for inserts
+          const { data: retryPost, error: retryError } = await (supabase as any)
             .from('calendar_posts')
             .insert({
               calendar_id: calendar.id,
@@ -389,7 +420,8 @@ export async function generateCalendar(params: PlanningParams): Promise<ContentC
       activitiesMap.set(subreddit.id, updatedActivity);
 
       // Update topic history
-      await supabase
+      // Cast supabase client to bypass strict typing for upserts
+      await (supabase as any)
         .from('topic_history')
         .upsert({
           company_id,
@@ -433,7 +465,13 @@ export async function generateCalendar(params: PlanningParams): Promise<ContentC
   
   // Group by day for verification
   const verifyByDay = [0, 0, 0, 0, 0, 0, 0];
-  verifyPosts?.forEach(p => {
+  // Type assertion for verifyPosts
+  type PostType = {
+    day_of_week: number;
+    [key: string]: any;
+  };
+  const verifyPostsData = (verifyPosts || []) as PostType[];
+  verifyPostsData.forEach(p => {
     if (p.day_of_week >= 0 && p.day_of_week <= 6) {
       verifyByDay[p.day_of_week]++;
     }
@@ -484,7 +522,8 @@ export async function generateCalendar(params: PlanningParams): Promise<ContentC
       enhancedPlan.emotion || 'supportive'
     );
 
-    const { data: reply, error: replyError } = await supabase
+    // Cast supabase client to bypass strict typing for inserts
+    const { data: reply, error: replyError } = await (supabase as any)
       .from('calendar_replies')
       .insert({
         post_id: postId,
@@ -494,7 +533,7 @@ export async function generateCalendar(params: PlanningParams): Promise<ContentC
         planned_content: replyContent,
         tone: enhancedPlan.tone || 'helpful',
         emotion: enhancedPlan.emotion || 'supportive',
-      } as any)
+      })
       .select()
       .single();
 
@@ -507,24 +546,26 @@ export async function generateCalendar(params: PlanningParams): Promise<ContentC
   const spamCheck = checkSpamAndSafety(
     posts,
     replies,
-    subreddits as Subreddit[],
+    subreddits,
     personas as Persona[],
     previousWeeksPosts
   );
   
   // Update calendar with spam warnings
   if (spamCheck.warnings.length > 0) {
-    await supabase
+    // Cast supabase client to bypass strict typing for updates
+    await (supabase as any)
       .from('content_calendars')
       .update({
         spam_warnings: spamCheck.warnings,
-      } as any)
+      })
       .eq('id', calendar.id);
   }
 
   // 8. Update subreddit activities
   for (const activity of activitiesMap.values()) {
-    await supabase
+    // Cast supabase client to bypass strict typing for upserts
+    await (supabase as any)
       .from('subreddit_activity')
       .upsert(activity, {
         onConflict: 'subreddit_id,company_id,week_start_date',
