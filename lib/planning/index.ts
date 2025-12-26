@@ -89,7 +89,10 @@ export async function generateCalendar(params: PlanningParams): Promise<ContentC
     .eq('company_id', company_id)
     .gte('created_at', sevenDaysAgo.toISOString());
 
-  const recentCalendarIds = recentCalendars?.map(c => c.id) || [];
+  // Type assertion for recentCalendars
+  type RecentCalendarType = { id: string; [key: string]: any };
+  const recentCalendarsData = (recentCalendars || []) as RecentCalendarType[];
+  const recentCalendarIds = recentCalendarsData.map(c => c.id);
   let recentPosts: any[] = [];
   if (recentCalendarIds.length > 0) {
     const { data: postsData } = await supabase

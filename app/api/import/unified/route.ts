@@ -158,9 +158,10 @@ export async function POST(request: NextRequest) {
         size_category: 'medium' as const,
       }));
 
-      const { data: subreddits, error: subredditsError } = await supabase
+      // Cast supabase client to bypass strict typing for inserts
+      const { data: subreddits, error: subredditsError } = await (supabase as any)
         .from('subreddits')
-        .insert(subredditsToInsert as any) // Cast as any to resolve insert type issue
+        .insert(subredditsToInsert)
         .select();
 
       if (!subredditsError && subreddits) {
@@ -197,9 +198,10 @@ export async function POST(request: NextRequest) {
         };
       });
 
-      const { data: personas, error: personasError } = await supabase
+      // Cast supabase client to bypass strict typing for inserts
+      const { data: personas, error: personasError } = await (supabase as any)
         .from('personas')
-        .insert(personasToInsert as any) // Cast as any to resolve type error with insert
+        .insert(personasToInsert)
         .select();
 
       if (!personasError && personas) {
@@ -215,9 +217,10 @@ export async function POST(request: NextRequest) {
         priority: parsedData.seoQueries.length - index, // Higher priority for earlier queries
       }));
 
-      const { data: queries, error: queriesError } = await supabase
+      // Cast supabase client to bypass strict typing for inserts
+      const { data: queries, error: queriesError } = await (supabase as any)
         .from('seo_queries')
-        .insert(queriesToInsert as any)
+        .insert(queriesToInsert)
         .select();
 
       if (!queriesError && queries) {
@@ -265,14 +268,15 @@ export async function POST(request: NextRequest) {
         const weekStartStr = weekStart.toISOString().split('T')[0];
 
         // Create calendar
-        const { data: calendar, error: calendarError } = await supabase
+        // Cast supabase client to bypass strict typing for inserts
+        const { data: calendar, error: calendarError } = await (supabase as any)
           .from('content_calendars')
           .insert({
             company_id: companyId,
             week_start_date: weekStartStr,
             posts_per_week: parsedData.posts.length,
             status: 'draft',
-          } as any)
+          })
           .select()
           .single();
 
@@ -300,7 +304,8 @@ export async function POST(request: NextRequest) {
 
             const postType = inferPostType(excelPost.title, excelPost.body);
 
-            const { data: post, error: postError } = await supabase
+            // Cast supabase client to bypass strict typing for inserts
+            const { data: post, error: postError } = await (supabase as any)
               .from('calendar_posts')
               .insert([{
                 calendar_id: calendarId,
@@ -336,7 +341,8 @@ export async function POST(request: NextRequest) {
             if (commentText.includes('?')) intent = 'ask';
             else if (commentText.includes('but') || commentText.includes('however')) intent = 'challenge';
 
-            const { data: reply } = await supabase
+            // Cast supabase client to bypass strict typing for inserts
+            const { data: reply } = await (supabase as any)
               .from('calendar_replies')
               .insert([{
                 post_id: postId,

@@ -21,7 +21,8 @@ export async function PATCH(
     if (tone !== undefined) updateData.tone = tone;
     if (emotion !== undefined) updateData.emotion = emotion;
 
-    const { data, error } = await supabase
+    // Cast supabase client to bypass strict typing for updates
+    const { data, error } = await (supabase as any)
       .from('calendar_replies')
       .update(updateData)
       .eq('id', params.id)

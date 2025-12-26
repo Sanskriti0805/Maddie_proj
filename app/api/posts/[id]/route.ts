@@ -21,7 +21,8 @@ export async function PATCH(
     if (post_type !== undefined) updateData.post_type = post_type;
     if (posting_strategy !== undefined) updateData.posting_strategy = posting_strategy;
 
-    const { data, error } = await supabase
+    // Cast supabase client to bypass strict typing for updates
+    const { data, error } = await (supabase as any)
       .from('calendar_posts')
       .update(updateData)
       .eq('id', params.id)

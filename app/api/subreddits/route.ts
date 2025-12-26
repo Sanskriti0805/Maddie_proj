@@ -43,7 +43,8 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createServerClient();
-    const { data, error } = await supabase
+    // Cast supabase client to bypass strict typing for inserts
+    const { data, error } = await (supabase as any)
       .from('subreddits')
       .insert({
         company_id,
