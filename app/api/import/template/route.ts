@@ -9,7 +9,7 @@ export async function GET() {
   try {
     const templateBuffer = createExcelTemplate();
 
-    return new NextResponse(templateBuffer, {
+    return new NextResponse(templateBuffer as any, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': 'attachment; filename="reddit-mastermind-template.xlsx"',
