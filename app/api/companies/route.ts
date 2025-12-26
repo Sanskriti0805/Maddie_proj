@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/client';
 import type { Company } from '@/types';
+
+// Mark route as dynamic to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   try {
+    const { createServerClient } = await import('@/lib/supabase/client');
     const supabase = createServerClient();
     const { data, error } = await supabase
       .from('companies')
@@ -29,7 +33,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
+    const { createServerClient } = await import('@/lib/supabase/client');
     const supabase = createServerClient();
+    
+    console.log('Creating company:', { name, description, target_users, pain_points });
     // Cast supabase client to bypass strict typing for inserts
     const { data, error } = await (supabase as any)
       .from('companies')
@@ -45,9 +52,16 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
+      console.error('Error creating company:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    if (!data) {
+      console.error('No data returned from insert');
+      return NextResponse.json({ error: 'Failed to create company - no data returned' }, { status: 500 });
+    }
+
+    console.log('Company created successfully:', data);
     return NextResponse.json({ company: data }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

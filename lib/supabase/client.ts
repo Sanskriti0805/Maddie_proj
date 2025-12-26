@@ -2,12 +2,9 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
 
 // Check if we're in build phase (Next.js sets this during build)
-// Also check for common build environment indicators
+// Only use placeholders during actual build, not at runtime
 const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' || 
-                     process.env.NEXT_PHASE === 'phase-development-build' ||
-                     process.env.NEXT_PHASE === 'phase-production-server' ||
-                     // During build, API routes might be analyzed but env vars not available
-                     (typeof window === 'undefined' && !process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NODE_ENV === 'production');
+                     process.env.NEXT_PHASE === 'phase-development-build';
 
 // Lazy client creation to avoid errors during build time
 let supabaseInstance: ReturnType<typeof createClient<Database>> | null = null;
@@ -53,8 +50,10 @@ export function createServerClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   
-  // During build time, use placeholders to avoid errors
+  // During build time only, use placeholders to avoid errors
+  // In production runtime, we MUST have real env vars
   if (isBuildPhase) {
+    // Only use placeholders during actual build phase
     return createClient<Database>(
       supabaseUrl || 'https://placeholder.supabase.co',
       serviceRoleKey || 'placeholder-key',
@@ -67,9 +66,15 @@ export function createServerClient() {
     );
   }
   
-  // In runtime, validate env vars
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Missing Supabase environment variables');
+  // In runtime (both dev and production), validate env vars are present
+  if (!supabaseUrl) {
+    console.error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable');
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL. Please set it in your environment variables.');
+  }
+  
+  if (!serviceRoleKey) {
+    console.error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable');
+    throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY. Please set it in your environment variables.');
   }
   
   return createClient<Database>(supabaseUrl, serviceRoleKey, {
